@@ -1,0 +1,122 @@
+diff  C:/Users/91984/Downloads/DataManipulator.ts C:/Users/91984/Downloads/Graph.tsx
+0a1,2
+> import React, { Component } from 'react';
+> import { Table } from '@finos/perspective';
+1a4
+> import './Graph.css';
+3,10c6,11
+< export interface Row {
+<   price_abc:number,
+<   price_def:number,
+<   ratio:number,
+<   upper_bound:number,
+<   lower_bound:number,
+<   trigger_alert:number | undefined,
+<   timestamp: Date,
+---
+> /**
+>  * Props declaration for <Graph />
+>  */
+> interface IProps 
+> {
+>   data: ServerRespond[],
+13,31c14,20
+< 
+< export class DataManipulator {
+<     static generateRow(serverRespond: ServerRespond[]): Row {
+<            const priceABC = (serverRespond[0].top_ask.price + serverRespond[0].top_bid.price) / 2;
+<            const priceDEF = (serverRespond[1].top_ask.price + serverRespond[1].top_bid.price) / 2;
+<            const ratio = priceABC / priceDEF;
+<            const upperBound = 1 + 0.05;
+<            const lowerBound = 1 - 0.05;
+<            return {
+<            price_abc: priceABC,
+<            price_def: priceDEF,
+<            ratio,
+<            timestamp: serverRespond[0].timestamp > serverRespond[1].timestamp ?
+<            serverRespond[0].timestamp : serverRespond[1].timestamp,
+<            upper_bound: upperBound,
+<            lower_bound: lowerBound,
+<            trigger_alert: (ratio > upperBound || ratio < lowerBound) ? ratio : undefined,
+<           };
+<         }
+---
+> /**
+>  * Perspective library adds load to HTMLElement prototype.
+>  * This interface acts as a wrapper for Typescript compiler.
+>  */
+> interface PerspectiveViewerElement extends HTMLElement
+> {
+>   load: (table: Table) => void,
+32a22,92
+> 
+> /**
+>  * React component that renders Perspective based on data
+>  * parsed from its parent through data property.
+>  */
+> class Graph extends Component<IProps, {}> 
+> {
+>   // Perspective table
+>   table: Table | undefined;
+> 
+>   render() 
+>   {
+>     return React.createElement('perspective-viewer');
+>   }
+> 
+>   componentDidMount() 
+>   {
+>     // Get element to attach the table from the DOM.
+>     const elem= document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
+> 
+>     const schema = {
+>       price_abc: 'float',
+>       price_def: 'float',
+>       ratio: 'float',
+>       timestamp: 'date',
+>       upper_bound: 'float',
+>       lower_bound: 'float',
+>       trigger_alert: 'float',
+>     };
+> 
+>     if (window.perspective ) 
+>     {
+>       this.table = window.perspective.worker().table(schema);
+>     }
+>     if (this.table) {
+>       // Load the `table` in the `<perspective-viewer>` DOM reference.
+> 
+>       // Add more Perspective configurations here.
+>       elem.load(this.table);
+>       elem.setAttribute('view', 'y_line');
+>       elem.setAttribute('row-pivots', '["timestamp"]');
+>       elem.setAttribute('columns', '["top_ask_price"]');
+>       elem.setAttribute('aggregates', JSON.stringify({
+>         price_abc: 'float',
+>         price_def: 'float',
+>         ratio: 'float',
+>         timestamp: 'date',
+>         upper_bound: 'float',
+>         lower_bound: 'float',
+>         trigger_alert: 'float', 
+>       }));
+>       
+>     }
+>   }
+> 
+>   componentDidUpdate() {
+>     // Everytime the data props is updated, insert the data into Perspective table
+>     if (this.table) 
+>     {
+>       // As part of the task, you need to fix the way we update the data props to
+>       // avoid inserting duplicated entries into Perspective table again.
+>       this.table.update([
+>        Datamanipulator.generatRow(this.props.data),
+>       ]) as unkown as TableData;
+>      } 
+>       
+>     }
+>   }
+> 
+> 
+> export default Graph;
